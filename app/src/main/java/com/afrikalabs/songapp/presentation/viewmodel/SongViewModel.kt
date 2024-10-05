@@ -1,6 +1,5 @@
 package com.afrikalabs.songapp.presentation.viewmodel
 
-import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.afrikalabs.songapp.domain.model.Song
@@ -8,81 +7,63 @@ import com.afrikalabs.songapp.domain.usecase.GetAllSongsUseCase
 import com.afrikalabs.songapp.domain.usecase.SearchSongByAuthorUseCase
 import com.afrikalabs.songapp.domain.usecase.SearchSongByContentUseCase
 import com.afrikalabs.songapp.domain.usecase.SearchSongByTitleUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class SongViewModel(
+@HiltViewModel
+class SongViewModel @Inject constructor(
     private val getAllSongsUseCase: GetAllSongsUseCase,
     private val searchSongByTitleUseCase: SearchSongByTitleUseCase,
     private val searchSongByContentUseCase: SearchSongByContentUseCase,
     private val searchSongByAuthorUseCase: SearchSongByAuthorUseCase
 ) : ViewModel() {
 
-    var songs by mutableStateOf<List<Song>>(emptyList())
-        private set
+    private var _songs = MutableStateFlow<List<Song>>(emptyList())
+    val songs: StateFlow<List<Song>> = _songs
 
-    var isLoading by mutableStateOf(false)
-        private set
-
-    var errorMessage by mutableStateOf<String?>(null)
-        private set
-
-    // Initialiser la liste avec toutes les chansons
     init {
         loadAllSongs()
     }
 
+    // Chargement de toutes les chansons au démarrage
     private fun loadAllSongs() {
         viewModelScope.launch {
             try {
-                isLoading = true
-                songs = getAllSongsUseCase()
+                _songs.value = getAllSongsUseCase()
             } catch (e: Exception) {
-                errorMessage = "Erreur de chargement des chansons."
-            } finally {
-                isLoading = false
+                // Gérer les erreurs ici (par exemple afficher un message d'erreur dans l'UI)
             }
         }
     }
 
-    // Fonction de recherche par titre
-    fun searchByTitle(title: String) {
+    // Recherche combinée par titre, contenu et auteur
+    fun search(query: String) {
         viewModelScope.launch {
             try {
-                isLoading = true
-                songs = searchSongByTitleUseCase(title)
+                // Lancer les trois recherches en parallèle
+                val titleResults = async { searchSongByTitleUseCase(query) }
+                val contentResults = async { searchSongByContentUseCase(query) }
+                val authorResults = async { searchSongByAuthorUseCase(query) }
+
+                // Combiner les résultats dans un Set pour éviter les doublons
+                val combinedResults =
+                    (titleResults.await() + contentResults.await() + authorResults.await()).distinct()
+
+                // Mettre à jour la liste des chansons avec les résultats combinés
+                _songs.value = combinedResults
             } catch (e: Exception) {
-                errorMessage = "Erreur de recherche par titre."
-            } finally {
-                isLoading = false
+                // Gérer les erreurs ici
             }
         }
     }
 
-    // Fonction de recherche par auteur
-    fun searchByAuthor(author: String) {
-        viewModelScope.launch {
-            try {
-                isLoading = true
-                songs = searchSongByAuthorUseCase(author)
-            } catch (e: Exception) {
-                errorMessage = "Erreur de recherche par auteur."
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    // Fonction de recherche par contenu (paroles)
-    fun searchByContent(content: String) {
-        viewModelScope.launch {
-            try {
-                isLoading = true
-                songs = searchSongByContentUseCase(content)
-            } catch (e: Exception) {
-                errorMessage = "Erreur de recherche par contenu."
-            } finally {
-                isLoading = false
-            }
-        }
+    // Récupération d'une chanson par ID
+    fun getSongById(songId: Int): Song {
+        return _songs.value.find { it.id == songId }
+            ?: throw IllegalArgumentException("Song not found")
     }
 }

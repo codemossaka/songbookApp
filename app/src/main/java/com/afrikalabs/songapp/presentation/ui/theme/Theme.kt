@@ -1,6 +1,5 @@
-package com.afrikalabs.songapp.ui.theme
+package com.afrikalabs.songapp.presentation.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme

@@ -1,4 +1,4 @@
-package com.afrikalabs.songapp.ui.theme
+package com.afrikalabs.songapp.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

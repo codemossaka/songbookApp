@@ -1,11 +1,11 @@
 package com.afrikalabs.songapp.data.model
 
-//import androidx.room.Entity
-//import androidx.room.PrimaryKey
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 
-//@Entity(tableName = "songs")
+@Entity(tableName = "songs")
 data class SongEntity(
-//    @PrimaryKey
+    @PrimaryKey
     val id: Int,
     val title: String,
     val author: String,

@@ -4,9 +4,10 @@ import com.afrikalabs.songapp.data.datasource.SongLocalDataSource
 import com.afrikalabs.songapp.data.model.SongEntity
 import com.afrikalabs.songapp.domain.model.Song
 import com.afrikalabs.songapp.domain.repository.SongRepository
+import javax.inject.Inject
 
 
-class SongRepositoryImpl(private val dataSource: SongLocalDataSource) : SongRepository {
+class SongRepositoryImpl @Inject constructor(private val dataSource: SongLocalDataSource) : SongRepository {
     override suspend fun getAllSongs(): List<Song> {
         return dataSource.getAllSongs().map { it.toDomain() }
     }
